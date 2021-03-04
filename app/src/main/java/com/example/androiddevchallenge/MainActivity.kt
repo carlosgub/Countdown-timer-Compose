@@ -16,8 +16,11 @@
 package com.example.androiddevchallenge
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -72,6 +75,11 @@ var showStart by mutableStateOf(true)
 var cooking by mutableStateOf(false)
 var isPause by mutableStateOf(true)
 var progress by mutableStateOf(362f)
+var minutes = 4
+var divisor = 360 / minutes
+var secondsDivisor:Float = divisor / 60F
+var timeToUpdate = 100L //Miliseconds
+var progressReducer: Float = (360F * timeToUpdate / minutes / 60F / 1000F).toFloat()
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -146,7 +154,7 @@ fun MyApp() {
                         .size(140.dp)
                 )
                 Text(
-                    text = "3 minutes",
+                    text = "$minutes minutes",
                     style = MaterialTheme.typography.subtitle2.copy(
                         color = orangeMenu
                     ),
@@ -179,12 +187,11 @@ fun MyApp() {
                                 top.linkTo(box.top, margin = 5.dp)
                                 start.linkTo(box.start)
                                 end.linkTo(box.end)
-                            },
-                        progress
+                            }
                     )
-                    var seconds = (((progress - 2) % 120) / 2).toInt()
+                    val seconds: Int by animateIntAsState((((progress - 2) % divisor) / secondsDivisor).toInt())
                     Text(
-                        text = "${((progress - 2) / 120).toInt()}:${if (seconds < 10) "0$seconds" else seconds}",
+                        text = "${((progress - 2) / divisor).toInt()}:${if (seconds < 10) "0$seconds" else seconds}",
                         style = MaterialTheme.typography.h6,
                         modifier = Modifier
                             .constrainAs(text) {
@@ -316,9 +323,9 @@ private const val DividerLengthInDegrees = 1.8f
 
 @Composable
 fun AnimatedCircle(
-    modifier: Modifier = Modifier,
-    sweep: Float
+    modifier: Modifier = Modifier
 ) {
+    val progressAnimation: Float by animateFloatAsState(progress)
     val stroke = with(LocalDensity.current) { Stroke(5.dp.toPx()) }
     Canvas(modifier) {
         val innerRadius = (size.minDimension - stroke.width) / 2
@@ -332,7 +339,7 @@ fun AnimatedCircle(
         drawArc(
             color = orangeMenu,
             startAngle = startAngle + DividerLengthInDegrees / 2,
-            sweepAngle = sweep - DividerLengthInDegrees,
+            sweepAngle = progressAnimation - DividerLengthInDegrees,
             topLeft = topLeft,
             size = size,
             useCenter = false,
@@ -343,12 +350,13 @@ fun AnimatedCircle(
 
 suspend fun setAnimation() {
     while (cooking) {
-        progress -= 1
+        Log.d(":)", progressReducer.toString())
+        progress -= progressReducer
         if (progress <= 2) {
             progress = 362f
             cooking = false
             showStart = true
         }
-        delay(500)
+        delay(timeToUpdate)
     }
 }
