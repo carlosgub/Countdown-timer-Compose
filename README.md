@@ -6,7 +6,7 @@
 
 
 ## :scroll: Description
-An application so that your egg does not go over boiled :egg:
+Is an application to keep your eggs from over boiled. :egg:
 
 
 ## :bulb: Motivation and Context
